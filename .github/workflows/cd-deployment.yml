@@ -1,0 +1,46 @@
+name: Pipeline CD - Deployment & Rollback
+
+# Este pipeline se ejecuta manualmente desde la pestaña Actions para demostración
+on:
+  workflow_dispatch:
+    inputs:
+      simular_fallo_despliegue:
+        description: '¿Simular fallo en el despliegue para forzar Rollback?'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  deploy-to-staging:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 1. Descargar Código Fuente
+      uses: actions/checkout@v3
+
+    - name: 2. Pruebas de Aceptación (Smoke Tests)
+      run: |
+        echo "=== EJECUTANDO ACCEPTANCE TESTS EN STAGING ==="
+        echo "Validando conexión a base de datos de prueba... OK"
+        echo "Validando endpoints críticos... OK"
+
+    - name: 3. Simular Despliegue en Ambiente de Pruebas
+      run: |
+        echo "=== INICIANDO DESPLIEGUE EN STAGING ==="
+        echo "Desplegando artefacto v1.0.0... completado."
+
+    - name: 4. Verificación Post-Despliegue (Health Check)
+      id: healthcheck
+      run: |
+        if [ "${{ github.event.inputs.simular_fallo_despliegue }}" == "true" ]; then
+          echo "[ERROR] El health check ha fallado. La aplicación no responde en Staging."
+          exit 1
+        else
+          echo "[OK] Health check exitoso. La aplicación está corriendo en Staging."
+        fi
+
+    - name: 5. Ejecutar Rollback Automático (Solo si falla el Health Check)
+      if: failure() && steps.healthcheck.outcome == 'failure'
+      run: |
+        echo "=== DESENCADENANDO PROCESO DE ROLLBACK AUTOMÁTICO ==="
+        echo "Restaurando la versión estable anterior... completado."
+        echo "Notificando al equipo de QA sobre el fallo y rollback... completado."
