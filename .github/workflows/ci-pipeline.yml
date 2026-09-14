@@ -1,0 +1,36 @@
+name: Pipeline CI - Automatizacion de Pruebas
+
+# Define cuándo se ejecuta el pipeline: en cada push o pull request a la rama main
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    # Usa un servidor Linux actualizado
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Descargar Código Fuente (Checkout)
+      uses: actions/checkout@v3
+
+    - name: 2. Configurar Entorno Java 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin' # Distribución recomendada de Java
+        cache: 'maven'        # Acelera futuras ejecuciones
+
+    - name: 3. Etapa de Build (Compilación)
+      # Compila el código pero se salta las pruebas por ahora
+      run: mvn clean compile -DskipTests
+
+    - name: 4. Etapa de Pruebas Unitarias
+      # Ejecuta solo la clase de prueba unitaria
+      run: mvn test -Dtest=CalculadoraTest
+
+    - name: 5. Etapa de Pruebas de Integración
+      # Ejecuta solo la clase de prueba de integración
+      run: mvn test -Dtest=IntegracionServicioTest
